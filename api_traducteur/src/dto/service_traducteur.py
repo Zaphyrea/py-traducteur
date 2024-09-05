@@ -1,19 +1,23 @@
 from dto.connexion import Connexion
 from model.prompt import Prompt
 from model.utilisateur import Utilisateur
+import json
 
 class Service_Traducteur(Connexion):
 
     @classmethod
     def sauvegarder_prompt(cls, prompt:Prompt):
-        cls.ouvrir_connexion()
-        query = "INSERT INTO Prompts (text_in, text_out, version, utilisateur) VALUES (%s, %s, %s, %s)"
-        values = [prompt.atraduire, prompt.traduction, prompt.version, prompt.utilisateur]
-        
-        cls.cursor.execute(query, values)
-        cls.bdd.commit()
-        cls.fermer_connexion()
-    
+        try :
+            cls.ouvrir_connexion()
+            query = "INSERT INTO prompts (text_in, text_out, version, utilisateur) VALUES (%s, %s, %s, %s)"
+            values = [prompt.atraduire, prompt.traduction, prompt.version, prompt.utilisateur]
+            
+            cls.cursor.execute(query, values)
+            cls.bdd.commit()
+            cls.fermer_connexion()
+        except Exception as e:
+            print(f"Une erreur inattendue est survenue :{e}")
+
     @classmethod
     def verifier_login(cls, utilisateur:Utilisateur):
         try:

@@ -7,5 +7,6 @@ web_traducteur/.webvenv
 bdd_traducteur/mysql.sock
 bdd_traducteur/bdd/
 
-
+.venvapi
+.venvweb
 

@@ -25,7 +25,7 @@ tags =[
 
 app = FastAPI(
      title="Appli de traduction",
-     description="API de traudction",
+     description="API de traduction",
      version="1.0.0",
      openapi_tags = tags
 )
@@ -50,4 +50,4 @@ def authentifier(utilisateur:Utilisateur):
        return {"authentifié" : utilisateur.authentifie, "id":utilisateur.id}
 
 if __name__ == "__main__" :
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run("api:app", host="0.0.0.0", port=8080)
