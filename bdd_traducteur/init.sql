@@ -34,3 +34,15 @@ INSERT INTO `utilisateurs` (`id`, `login`, `mdp`) VALUES
 (2,	'Gilliam',	'Flying Circus');
 
 -- 2024-07-10 12:39:49
+
+CREATE TABLE IF NOT EXISTS `latences` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `utilisateur_id` int NOT NULL,
+  `timestamp` datetime DEFAULT CURRENT_TIMESTAMP,
+  `latence_ms` int NOT NULL,
+  `version` varchar(250) NOT NULL,
+  `statut_code` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `utilisateur_id` (`utilisateur_id`),
+  CONSTRAINT `latences_ibfk_1` FOREIGN KEY (`utilisateur_id`) REFERENCES `utilisateurs` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
