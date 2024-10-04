@@ -17,17 +17,9 @@ class TraducteurApp:
         self.URL_TRADUCTIONS = URL_TRADUCTIONS
         self.titre = "Traducteur"
 
-        # st.set_page_config(
-        #     page_title="Traducteur",
-        #     page_icon="🤖",
-        #     layout="wide",
-        #     initial_sidebar_state="expanded",
-        # )
-
         if "logged_in" not in st.session_state:
             st.session_state["logged_in"] = None
 
-        # self.show_login_form()
         self.show_app()
 
     def show_login_form(self):
@@ -103,21 +95,6 @@ class TraducteurApp:
         dashboard = DashboardApp()  
         dashboard.show() 
 
-
-    # def show_dashboard(self):
-    #     st.title("Suivi de la latence du modèle de traduction")
-    #     latences = self.get_metrics_data()
-
-    #     if latences:
-    #         df = pd.DataFrame(latences, columns=["Latence (s)"])
-    #         st.line_chart(df)
-    #         st.write(f"Latence moyenne : {df['Latence (s)'].mean():.2f} secondes")
-    #         st.write(f"Latence maximale : {df['Latence (s)'].max():.2f} secondes")
-    #         st.write(f"Latence minimale : {df['Latence (s)'].min():.2f} secondes")
-    #     else:
-    #         st.write("Aucune donnée de latence disponible.")
-
-
     def get_versions(self):
         versions = ["Aucune langue détectée !"]
         response = requests.get(self.URL_VERSIONS)
@@ -150,8 +127,11 @@ class TraducteurApp:
             # Mesurer la latence en secondes
             latence = time.time() - start_time
 
+            # Récupérer l'utilisateur
+            utilisateur = st.session_state.get("logged_in", "Anonyme")
+
             # Enregistrer latence et nombre de mots dans un fichier de log
-            self.log_latence(latence, word_count)
+            self.log_latence(latence, word_count, utilisateur)
 
             if response.status_code == 200:
                 st.success("Voici votre traduction !")
@@ -191,23 +171,40 @@ class TraducteurApp:
                 latences = [float(line.strip()) for line in f.readlines()]
             return latences
         except FileNotFoundError:
-            st.write("Aucune donnée de latence disponible.")
-            return []
+            st.error("Fichier de latence introuvable.")
 
-    def log_latence(self, latence, nombre_mots):
+    def log_latence(self, latence, nombre_mots, utilisateur):
         """
         Enregistre la latence et le nombre de mots dans un fichier CSV.
-
+        
         Args:
             latence (float): La latence en secondes.
             nombre_mots (int): Le nombre de mots dans le texte traduit.
+            utilisateur (str): L'identifiant de l'utilisateur ou "Anonyme".
         """
         try:
-            # max_time = self.get_max_translation_time(nombre_mots)
-            # if latence > max_time:
-            #     self.enregistrer_alerte(latence, nombre_mots, max_time)
-        
-            with open('latence_log.csv', 'a') as f:  # Ouvre le fichier en mode ajout ('a') pour enregistrer chaque latence
-                f.write(f"{latence}, {nombre_mots}\n") 
+            # Calcul de la durée maximale autorisée
+            duree_max_autorisee = self.calculer_duree_max_autorisee(nombre_mots)
+            
+            # Enregistrer une alerte si la latence dépasse la durée maximale
+            if latence > duree_max_autorisee:
+                self.enregistrer_alerte(latence, nombre_mots, duree_max_autorisee, utilisateur)
+            
+            # Enregistrement standard de la latence pour le graphique
+            with open('latence_log.csv', 'a') as f:
+                f.write(f"{latence}, {nombre_mots}\n")
         except Exception as e:
             st.error(f"Erreur lors de l'enregistrement de la latence : {e}")
+
+
+    def enregistrer_alerte(self, latence, nombre_mots, duree_max_autorisee, utilisateur):
+        from datetime import datetime
+        now = datetime.now()
+        date = now.strftime("%Y-%m-%d")
+        heure = now.strftime("%H:%M:%S")
+        
+        with open('alertes_log.csv', 'a') as f:
+            f.write(f"{date},{heure},{utilisateur},{latence},{nombre_mots},{duree_max_autorisee}\n")
+
+    def calculer_duree_max_autorisee(self, nombre_mots):
+        return 5 + (nombre_mots - 1) + (1.5 * nombre_mots) # incrémentation du temps en fonction du nombre de mots
