@@ -17,12 +17,12 @@ class TraducteurApp:
         self.URL_TRADUCTIONS = URL_TRADUCTIONS
         self.titre = "Traducteur"
 
-        st.set_page_config(
-            page_title="Traducteur",
-            page_icon="🤖",
-            layout="wide",
-            initial_sidebar_state="expanded",
-        )
+        # st.set_page_config(
+        #     page_title="Traducteur",
+        #     page_icon="🤖",
+        #     layout="wide",
+        #     initial_sidebar_state="expanded",
+        # )
 
         if "logged_in" not in st.session_state:
             st.session_state["logged_in"] = None
@@ -104,18 +104,18 @@ class TraducteurApp:
         dashboard.show() 
 
 
-    def show_dashboard(self):
-        st.title("Suivi de la latence du modèle de traduction")
-        latences = self.get_metrics_data()
+    # def show_dashboard(self):
+    #     st.title("Suivi de la latence du modèle de traduction")
+    #     latences = self.get_metrics_data()
 
-        if latences:
-            df = pd.DataFrame(latences, columns=["Latence (s)"])
-            st.line_chart(df)
-            st.write(f"Latence moyenne : {df['Latence (s)'].mean():.2f} secondes")
-            st.write(f"Latence maximale : {df['Latence (s)'].max():.2f} secondes")
-            st.write(f"Latence minimale : {df['Latence (s)'].min():.2f} secondes")
-        else:
-            st.write("Aucune donnée de latence disponible.")
+    #     if latences:
+    #         df = pd.DataFrame(latences, columns=["Latence (s)"])
+    #         st.line_chart(df)
+    #         st.write(f"Latence moyenne : {df['Latence (s)'].mean():.2f} secondes")
+    #         st.write(f"Latence maximale : {df['Latence (s)'].max():.2f} secondes")
+    #         st.write(f"Latence minimale : {df['Latence (s)'].min():.2f} secondes")
+    #     else:
+    #         st.write("Aucune donnée de latence disponible.")
 
 
     def get_versions(self):
@@ -134,6 +134,7 @@ class TraducteurApp:
         atraduire = st.text_input("Texte à traduire")
 
         if st.button("Traduire"):
+            word_count = len(atraduire.split())  
             data = {
                 "atraduire": atraduire,
                 "version": option,
@@ -149,20 +150,18 @@ class TraducteurApp:
             # Mesurer la latence en secondes
             latence = time.time() - start_time
 
-            # Enregistrer la latence dans un fichier de log
-            self.log_latence(latence)
+            # Enregistrer latence et nombre de mots dans un fichier de log
+            self.log_latence(latence, word_count)
 
             if response.status_code == 200:
                 st.success("Voici votre traduction !")
                 response_data = response.json()
-
+                reponse = response_data['traduction'] if isinstance(response_data['traduction'], str) else None
+     
                 # # Afficher la réponse complète pour voir sa structure
                 # st.json(response_data)
 
-                # Gérer les différents types de structure
-                if isinstance(response_data['traduction'], str):
-                    # reponse = f"{response_data['atraduire']} : {response_data['traduction']}"
-                    reponse = response_data['traduction']
+                if reponse:
                     st.write(reponse)
                 else:
                     st.error("Format de traduction inattendu.")
@@ -195,9 +194,20 @@ class TraducteurApp:
             st.write("Aucune donnée de latence disponible.")
             return []
 
-    def log_latence(self, latence):
+    def log_latence(self, latence, nombre_mots):
+        """
+        Enregistre la latence et le nombre de mots dans un fichier CSV.
+
+        Args:
+            latence (float): La latence en secondes.
+            nombre_mots (int): Le nombre de mots dans le texte traduit.
+        """
         try:
-            with open('latence_log.txt', 'a') as f:  # Ouvre le fichier txt en mode ajout ('a') pour enregistrer chaque latence
-                f.write(f"{latence}\n") 
+            # max_time = self.get_max_translation_time(nombre_mots)
+            # if latence > max_time:
+            #     self.enregistrer_alerte(latence, nombre_mots, max_time)
+        
+            with open('latence_log.csv', 'a') as f:  # Ouvre le fichier en mode ajout ('a') pour enregistrer chaque latence
+                f.write(f"{latence}, {nombre_mots}\n") 
         except Exception as e:
             st.error(f"Erreur lors de l'enregistrement de la latence : {e}")

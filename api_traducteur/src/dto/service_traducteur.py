@@ -57,17 +57,19 @@ class Service_Traducteur(Connexion):
         return prompts
 
     @classmethod
-
     def appeler_modele_traduction(cls, data):
         start_time = time.time()  # Commence le chronométrage
 
         response = requests.post(cls.URL_TRADUCTEUR, json=data)
         
         end_time = time.time()  # Fin du chronométrage
-        latence_ms = int((end_time - start_time) * 1000)  # Latence en millisecondes
+        latence_s = int(end_time - start_time)  
+
+        # Calculer nombre de mots
+        nombre_mots = len(data['atraduire'].split())
 
         # Enregistrer la latence
-        latence = Latence(utilisateur_id=data['utilisateur'], latence_ms=latence_ms, version=data['version'], statut_code=response.status_code)
+        latence = Latence(utilisateur_id=data['utilisateur'], latence_s=latence_s, nombre_mots=nombre_mots, version=data['version'], statut_code=response.status_code)
         cls.sauvegarder_latence(latence)
 
         return response
@@ -76,8 +78,8 @@ class Service_Traducteur(Connexion):
     def sauvegarder_latence(cls, latence: Latence):
         try:
             cls.ouvrir_connexion()
-            query = "INSERT INTO latences (utilisateur_id, latence_ms, version, statut_code) VALUES (%s, %s, %s, %s)"
-            values = [latence.utilisateur_id, latence.latence_ms, latence.version, latence.statut_code]
+            query = "INSERT INTO latences (utilisateur_id, latence_s, nombre_mots, version, statut_code) VALUES (%s, %s, %s, %s, %s)"
+            values = [latence.utilisateur_id, latence.latence_s, latence.nombre_mots, latence.version, latence.statut_code]
             cls.cursor.execute(query, values)
             cls.bdd.commit()
         except Exception as e:
@@ -93,7 +95,7 @@ class Service_Traducteur(Connexion):
             query = "SELECT * FROM latences"
             cls.cursor.execute(query)
             for latence_lue in cls.cursor:
-                latence = Latence(utilisateur_id=latence_lue["utilisateur_id"], latence_ms=latence_lue["latence_ms"], version=latence_lue["version"], statut_code=latence_lue["statut_code"])
+                latence = Latence(utilisateur_id=latence_lue["utilisateur_id"], latence_s=latence_lue["latence_s"], version=latence_lue["version"], statut_code=latence_lue["statut_code"])
                 latences.append(latence)
         except Exception as e:
             print(f"Erreur lors de la récupération des latences : {e}")
